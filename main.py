@@ -190,7 +190,7 @@ def main(config):
 
 	elif config.mode == 'localize':
 		logger('**********' * 3 + 'localize' + '**********' * 3)
-		masks = [os.path.join("/home/jingxiongli/datasets/Localize2/Masks", i) for i in os.listdir("/home/jingxiongli/datasets/Localize2/Masks")]
+		masks = [os.path.join("./datasets/Localize2/Masks", i) for i in os.listdir("./datasets/Localize2/Masks")]
 		masks.sort()
 
 		test_titles, test_values,  = localize_penumonia(config, Base, loader, start_epoch)

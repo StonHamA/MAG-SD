@@ -79,7 +79,7 @@ def localize(config, base, loader, masks, start_epoch):
     return test_name, test_value
 
 def localize_penumonia(config, base, loader, start_epoch):
-    mask_path = '/home/jingxiongli/datasets/NIH_localize/mask'
+    mask_path = './datasets/NIH_localize/mask'
     # transform the mask as it did to NIH dataset
     resize = T.Compose([XRayResizer(config.image_size),
                         T.ToPILImage(),

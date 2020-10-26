@@ -111,30 +111,6 @@ class dataset_loader:
 
 
 
-    def init_NIH(self):
-        dataset = NIH_Dataset(
-                 imgpath = os.path.join(self.dataset_path, "NIH", "images-224"),
-                 csvpath=os.path.join(self.dataset_path, "NIH", "Data_Entry_2017.csv"),
-                 transform=self.transform,
-                 data_aug=self.augmentation,
-                 nrows=None,
-                 seed=int(time.strftime('%H%M%S', time.localtime())),
-                 pure_labels=True,
-                 unique_patients=True)
-        dataset_roi = NIH_ROI_Dataset(transform=self.transform,
-                                  data_aug=self.augmentation,
-                                  imgpath=os.path.join('/home/jingxiongli/datasets/', 'NIH_localize/image'),
-                                  csvpath=os.path.join('/home/jingxiongli/datasets', 'NIH_localize/BBox_List_2017.csv'),
-                                  seed=int(time.strftime('%H%M%S', time.localtime())),
-                                  data_out_labels=['Pneumonia'],
-                                      resize=self.image_size)
-
-        dataset = FilterDataset(dataset, labels=["Nodule", "Mass", "Pneumonia"])
-        relabel_dataset(pathologies=["Nodule", "Mass", "Pneumonia"], dataset=dataset)
-        relabel_dataset(pathologies=["Nodule", "Mass", "Pneumonia"], dataset=dataset_roi)
-        dataset = Merge_Dataset((dataset, dataset_roi), seed=1)
-        dataset = BalanceDataset(dataset, None)
-        return dataset
 
     def init_COVID_localize_small(self):
         dataset = COVID19_Lung_Seg_Dataset(transform=self.transform,
@@ -218,60 +194,3 @@ class IterLoader:
 
 
 
-if __name__ == '__main__':
-    import argparse
-    import matplotlib.pyplot as plt
-    import numpy as np
-    import torchvision.transforms as t
-
-    # Configurations
-    parser = argparse.ArgumentParser()
-    # parser.add_argument('--dataset_path', type=str,
-    #
-    parser.add_argument('--dataset_path', type=str,
-                        # default='/home/jingxiongli/PycharmProjects/lungDatasets')
-                        # default = '/home/jingxiongli/datasets/')
-                        # default = '/home/jingxiongli/datasets/COVID-19_with_lung_seg')
-                        default = '/home/jingxiongli/PycharmProjects/lungDatasets')
-    parser.add_argument('--which_dataset', type=str,
-                        # default='COVID_NIH')
-                        # default='COVID_plus_NIH_localize')
-                        # default= 'COVID_lungseg')
-                        default='NIH')
-
-    parser.add_argument('--batch_size', type=int,
-                        default=16)
-    parser.add_argument('--image_size', type=int,
-                        default=224)
-    parser.add_argument('--seg_flag', type=bool, default=False)
-
-    config = parser.parse_args()
-    transform = torchvision.transforms.Compose([XRayResizer(224),
-                                                t.ToPILImage(),
-                                                ])
-    # transform = None
-
-    aug = torchvision.transforms.RandomApply([t.RandomRotation(180),
-											  t.ColorJitter(brightness=0.5, contrast=0.7),
-											  t.RandomResizedCrop(224, scale=(0.6, 1.0), ratio=(0.75, 1.33),
-																  interpolation=2),
-											  t.RandomHorizontalFlip(),
-											  t.RandomVerticalFlip(),
-                                              ], p=0.99)
-    # ZscoreNormalize(), t.ToTensor()
-    aug = torchvision.transforms.Compose([ZscoreNormalize(), t.ToTensor(),])
-    lung_dataset = dataset_loader(config, transform=transform, augmentation=aug)
-
-    # for i, item in enumerate(lung_dataset.all_set):
-    #     # data = np.swapaxes(item[0], 0, -1)
-    #     data = np.array(item[0])
-    #     print(data.shape)
-    #     label = item[1]
-    #     print('label:', label)
-    #     plt.imshow(np.squeeze(data), cmap='gray')
-    #     plt.show()
-    # print('0')
-
-    x1, x2,  = lung_dataset.train_set_iter.next_one()
-    print(x2)
-    print(x1.size())

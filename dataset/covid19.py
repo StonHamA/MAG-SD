@@ -505,7 +505,7 @@ class NIH_ROI_Dataset(Dataset):
     """
 
     def __init__(self, imgpath,
-                 csvpath='/home/jingxiongli/datasets/NIH/BBox_List_2017.csv',
+                 csvpath='./datasets/NIH/BBox_List_2017.csv',
                  transform=None,
                  data_aug=None,
                  nrows=None,
@@ -847,8 +847,8 @@ if __name__ == '__main__':
     import torch.utils.data as data
     import matplotlib.pyplot as plt
     test_COVID_dataset = COVID19_Localize(
-                 imgpath = '/home/jingxiongli/datasets/Localize2/Imgs',
-                 maskpath= '/home/jingxiongli/datasets/Localize2/Masks',
+                 imgpath = './datasets/Localize2/Imgs',
+                 maskpath= './datasets/Localize2/Masks',
                  transform=None,
                  data_aug=None,)
 
