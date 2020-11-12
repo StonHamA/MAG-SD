@@ -8,9 +8,7 @@ import torchvision
 import pandas as pd
 import torchvision.transforms as t
 from dataset.covid19 import NIH_Dataset, COVID19_Dataset, Merge_Dataset, COVID19_Lung_Seg_Dataset, \
-    FilterDataset, relabel_dataset, XRayCenterCrop, XRayResizer, histeq,ZscoreNormalize, triDim, BalanceDataset, \
-    COVID19_Localize, BalanceDataset30, NIH_ROI_Dataset
-
+    FilterDataset, relabel_dataset, XRayCenterCrop, XRayResizer, histeq,ZscoreNormalize, triDim, BalanceDataset
 
 class dataset_loader:
     def __init__(self, config, transform, augmentation):
@@ -40,10 +38,8 @@ class dataset_loader:
 
 
     def init_sets(self):
-        if self.which_dataset == 'COVID_plus_NIH_localize':
-            dataset, pneumonia_localize_dataset = eval('self.init_' + self.which_dataset + '()')
-        else:
-            dataset = eval('self.init_'+self.which_dataset+'()')
+
+        dataset = eval('self.init_'+self.which_dataset+'()')
         # spilt dataset
         train_set, val_set = data.random_split(dataset, [int(len(dataset)*4/5), len(dataset)-int(len(dataset)*4/5)],
                                                generator=torch.Generator().manual_seed(int(time.strftime('%H%M%S', time.localtime()))))
@@ -53,11 +49,7 @@ class dataset_loader:
         print('all_train', len(dataset), 'class:', pathologies, '  num:', count_train+count_val )
         print('train:', len(train_set), 'class:', pathologies, '  num:', count_train )
         print('validation:', len(val_set), 'class:', pathologies, '  num:', count_val )
-
-        if self.which_dataset == 'COVID_plus_NIH_localize':
-            return train_set, val_set, dataset, pneumonia_localize_dataset
-        else:
-            return train_set, val_set, dataset
+        return train_set, val_set, dataset
 
     def count_instance_num(self, dataset):
         ids = [str(i) for i in dataset.indices]
@@ -72,8 +64,6 @@ class dataset_loader:
                                            data_aug=self.augmentation,
                                            imgpath=os.path.join(self.dataset_path, 'images'),
                                            metapath=os.path.join(self.dataset_path, 'labels_csv.csv'),
-                                           maskpath=os.path.join(self.dataset_path, 'mask_images'),
-                                           seg_flag=self.seg_flag,
                                            seed=int(time.strftime('%H%M%S', time.localtime())),
                                            data_out_labels=["Viral Pneumonia",  "Bacterial Pneumonia","COVID-19", 'Healthy']
                                            )

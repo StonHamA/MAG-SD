@@ -212,7 +212,7 @@ if __name__ == '__main__':
 	# output configuration
 	parser.add_argument('--save_path', type=str, default='./out', help='path to save models, logs')
 	# dataset configuration
-	parser.add_argument('--dataset_path', type=str, default='./datasets')
+	parser.add_argument('--dataset_path', type=str, default='./datasets/covid-19-xray-dataset')
 
 	parser.add_argument('--which_dataset', type=str,
 						default='COVID_lungseg')

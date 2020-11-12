@@ -197,48 +197,6 @@ class BalanceDataset(Dataset):
     def __getitem__(self, idx):
         return self.dataset[self.idxs[idx]]
 
-class BalanceDataset30(Dataset):
-    """
-    convert all the classes of data to equal number (30)
-    15 localize + 15 other
-    dataset: target dataset
-    label: the label want to be balanced (label has the least cases)
-    """
-    def __init__(self, dataset, least_label='',):
-        super(BalanceDataset30, self).__init__()
-        self.dataset = dataset
-        self.least_label = least_label
-        self.pathologies = dataset.pathologies
-        self.idxs = self.limit_class_num_2_30()
-        self.labels = self.dataset.labels[self.idxs]
-
-    def limit_class_num_2_30(self):
-        labels = self.dataset.labels
-        instance_nums = sum(labels)
-        print(self.dataset.pathologies)
-        covid_nums = 30
-
-        # choose indices
-        idx = []
-        for i, name in enumerate(self.dataset.pathologies):
-            label_opreate = np.zeros(len(self.dataset.pathologies))
-            label_opreate[i] = 1
-            # mask = list(labels_tup).index(tuple(label_opreate))
-            index = [k for k in range(len(labels)) if (labels[k] == label_opreate).all()]
-            index.reverse()
-            idx += index[0:covid_nums]
-        return idx
-
-    def __repr__(self):
-        pprint.pprint(self.totals())
-        return self.__class__.__name__ + " num_samples={}".format(len(self))
-
-    def __len__(self):
-        return len(self.idxs)
-
-    def __getitem__(self, idx):
-        return self.dataset[self.idxs[idx]]
-
 
 
 
@@ -491,105 +449,12 @@ class COVID19_Dataset(Dataset):
         return img, self.labels[idx]
 
 
-class NIH_ROI_Dataset(Dataset):
-    """
-    NIH ChestX-ray8 dataset
-    Dataset release website:
-    https://www.nih.gov/news-events/news-releases/nih-clinical-center-provides-one-largest-publicly-available-chest-x-ray-datasets-scientific-community
-
-    Download full size images here:
-    https://academictorrents.com/details/557481faacd824c83fbf57dcf7b6da9383b3235a
-
-    Download resized (224x224) images here:
-    https://academictorrents.com/details/e615d3aebce373f1dc8bd9d11064da55bdadede0
-    """
-
-    def __init__(self, imgpath,
-                 csvpath='./datasets/NIH/BBox_List_2017.csv',
-                 transform=None,
-                 data_aug=None,
-                 nrows=None,
-                 seed=0,
-                 data_out_labels=None,
-                 resize=224):
-
-        super(NIH_ROI_Dataset, self).__init__()
-
-        np.random.seed(seed)  # Reset the seed so all runs are the same.
-        self.imgpath = imgpath
-        self.csvpath = csvpath
-        self.transform = transform
-        self.data_aug = data_aug
-        self.resize = resize
-
-        if data_out_labels is None:
-            # self.pathologies = ["Atelectasis", "Consolidation", "Infiltration",
-            #                     "Pneumothorax", "Edema", "Emphysema", "Fibrosis",
-            #                     "Effusion", "Pneumonia", "Pleural_Thickening",
-            #                     "Cardiomegaly", "Nodule", "Mass", "Hernia"]
-
-            self.pathologies = ["Nodule", "Mass", "Pneumonia", ]
-        else:
-            self.pathologies = data_out_labels
-
-        self.pathologies = sorted(self.pathologies)
-
-        # Load data
-        self.check_paths_exist()
-        self.csv = pd.read_csv(self.csvpath, nrows=nrows)
-        self.MAXVAL = 255  # Range [0 255]
-
-        self.csv = self.csv.groupby("Image Index").last().reset_index()
-
-        # Get our classes.
-        idx_want = self.csv["Finding Label"].isin(self.pathologies)
-        self.csv = self.csv[idx_want]
-        self.labels = []
-        for pathology in self.pathologies:
-            x = self.csv["Finding Label"].str.contains(pathology)
-            self.labels.append(x.values)
-        self.labels = np.asarray(self.labels).T.astype(np.float32)
-        print('x')
-
-    def __repr__(self):
-        pprint.pprint(self.totals())
-        return self.__class__.__name__ + " num_samples={}".format(len(self))
-
-    def __len__(self):
-        return len(self.labels)
-
-    def __getitem__(self, idx):
-        imgid = self.csv['Image Index'].iloc[idx]
-        img_path = os.path.join(self.imgpath, imgid)
-        img = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)
-
-        # Check that images are 2D arrays
-        if len(img.shape) > 2:
-            img = img[:, :, 0]
-        if len(img.shape) < 2:
-            print("error, dimension lower than 2 for image")
-
-        if self.transform is not None:
-            #transform NIH dataset to get as much lung as possible
-            transformPlus = transforms.Compose([self.transform,
-                                                transforms.CenterCrop(170),
-                                                transforms.Resize(self.resize)
-                                                ])
-            img = transformPlus(img)
-
-        if self.data_aug is not None:
-            img = self.data_aug(img)
-
-        return img, self.labels[idx]
-
 
 class COVID19_Lung_Seg_Dataset(Dataset):
 
     def __init__(self,
                  imgpath='',
-                 maskpath='',
                  metapath='',
-                 seg_flag = False,
                  transform=None,
                  data_aug=None,
                  nrows=None,
@@ -599,11 +464,9 @@ class COVID19_Lung_Seg_Dataset(Dataset):
         super(COVID19_Lung_Seg_Dataset, self).__init__()
         np.random.seed(seed)  # Reset the seed so all runs are the same.
         self.imgpath = imgpath
-        self.mask_path = maskpath
         self.transform = transform
         self.data_aug = data_aug
         self.csvpath = metapath
-        self.seg_flag = seg_flag
 
 
         # defined here to make the code easier to read
@@ -612,9 +475,6 @@ class COVID19_Lung_Seg_Dataset(Dataset):
             #                     'Fungal Pneumonia', "COVID-19", 'Healthy']
             self.pathologies = ["Viral Pneumonia", "Bacterial Pneumonia",
                                  "COVID-19", 'Healthy']
-            # self.pathologies = ["Bacterial Pneumonia","COVID-19", 'Healthy']
-            # self.pathologies = ["Viral Pneumonia", "COVID-19", 'Healthy']
-            # self.pathologies = ["COVID-19", 'Healthy']
         else:
             self.pathologies = data_out_labels
 
@@ -643,12 +503,7 @@ class COVID19_Lung_Seg_Dataset(Dataset):
 
         imgid = self.csv['id'].iloc[idx]
         img_path = os.path.join(self.imgpath, imgid)
-        mask_path = os.path.join(self.mask_path, imgid)
-        # print(img_path)
-        if self.seg_flag:
-            img = cv2.imread(mask_path, cv2.IMREAD_GRAYSCALE)
-        else:
-            img = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)
+        img = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)
 
         # Check that images are 2D arrays
         if len(img.shape) > 2:
@@ -661,65 +516,8 @@ class COVID19_Lung_Seg_Dataset(Dataset):
             # img = img.convert('L')
         if self.data_aug is not None:
             img = self.data_aug(img)
-        # plt.imshow(img)
-        # plt.show()
         labels = self.labels[idx]
         return  img, labels
-
-class COVID19_Localize(Dataset):
-
-    def __init__(self,
-                 imgpath='',
-                 maskpath='',
-                 transform=None,
-                 data_aug=None,
-                 masktransform=None,
-                 seed=0):
-
-        super(COVID19_Localize, self).__init__()
-        np.random.seed(seed)  # Reset the seed so all runs are the same.
-        self.imgpath = imgpath
-        self.mask_path = maskpath
-        self.transform = transform
-        self.masktransform = masktransform
-        self.data_aug = data_aug
-
-        # only "COVID-19" defined here
-        self.pathologies = ["Viral Pneumonia", "COVID-19", 'Healthy']
-        self.labels = [[0,1,0] for imgids in os.listdir(self.imgpath)]
-
-
-    def __repr__(self):
-        pprint.pprint(self.totals())
-        return self.__class__.__name__ + " num_samples={} ".format(len(self))
-
-    def __len__(self):
-        return len(self.labels)
-
-    def __getitem__(self, idx):
-        imgid = os.listdir(self.imgpath)[idx]
-        img_path = os.path.join(self.imgpath, imgid)
-        mask_path = os.path.join(self.mask_path, imgid)
-        # print(img_path)
-        img = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)
-        mask = cv2.imread(mask_path, cv2.IMREAD_GRAYSCALE)
-
-        # Check that images are 2D arrays
-        if len(img.shape) > 2:
-            img = img[:, :, 0]
-        if len(img.shape) < 2:
-            print("error, dimension lower than 2 for image")
-
-        if self.transform is not None:
-            img = self.transform(img)
-            # img = img.convert('L')
-        if self.data_aug is not None:
-            img = self.data_aug(img)
-
-        if self.masktransform is not None:
-            mask = self.masktransform(mask)
-
-        return  img, self.labels[idx], mask
 
 
 class XRayResizer(object):
@@ -846,9 +644,8 @@ def to_tuple(param, low=None, bias=None):
 if __name__ == '__main__':
     import torch.utils.data as data
     import matplotlib.pyplot as plt
-    test_COVID_dataset = COVID19_Localize(
-                 imgpath = './datasets/Localize2/Imgs',
-                 maskpath= './datasets/Localize2/Masks',
+    test_COVID_dataset = COVID19_Lung_Seg_Dataset(
+                 imgpath = './datasets',
                  transform=None,
                  data_aug=None,)
 
