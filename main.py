@@ -212,17 +212,16 @@ if __name__ == '__main__':
 	# output configuration
 	parser.add_argument('--save_path', type=str, default='./out', help='path to save models, logs')
 	# dataset configuration
-	parser.add_argument('--dataset_path', type=str, default='./datasets')
+	parser.add_argument('--dataset_path', type=str, default='./datasets/covid-19-xray-dataset')
 
 	parser.add_argument('--which_dataset', type=str,
-						# default='COVID_lungseg') #C
-						default='COVID_plus_NIH_localize')  # B
-						# default = 'COVID_NIH') #A
+						default='COVID_lungseg')
+
 
 	parser.add_argument('--Network', type=str, default='ResNet50', help='choose from MAG-SD, ResNet50, ResNet18, InceptionV3, vgg16')
 	parser.add_argument('--seg_flag', type=bool, default=False)
 
-	parser.add_argument('--class_num', type=int, default=3, help='identity numbers in training set')
+	parser.add_argument('--class_num', type=int, default=4, help='identity numbers in training set')
 	parser.add_argument('--attention_map_num', type=int, default=32, help='attention map numbers in training set')
 	parser.add_argument('--batch_size', type=int, default=16, help='batch_size')
 	parser.add_argument('--image_size', type=int, default=224, help='image size for pixel alignment module')
