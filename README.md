@@ -38,7 +38,7 @@ python main.py
 Results will be saved into `./out`, including a log file and saved model.
 
 ## Test 
-set configuration `--mode` in `main.py` to `test`, then run `python test.py`.
+set configuration `--mode` in `main.py` to `test`, then run `python main.py`.
 
 
 
